@@ -122,6 +122,8 @@ my_torch_filestore
 *.log
 .DS_Store
 
+# model weights
+models/weights
 
 branch_classification/out/
 branch_classification/output/
