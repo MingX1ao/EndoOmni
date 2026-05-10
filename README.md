@@ -5,14 +5,19 @@ This repository provides the code for the paper "[EndoOmni: Zero-Shot Cross-Data
 ![Zero-shot performance on unseen datasets](FirstPage.jpg)
 
 ## Table of Contents
-- [Results](#results)
-- [Dataset Download](#dataset-download)
-- [Environment Setup](#environment-setup)
-- [Pretrained Weights](#pretrained-weights)
-- [Running Evaluation](#running-evaluation)
-- [Citing the Paper](#citing-the-paper)
-- [Acknowledgement](#acknowledgement)
-- [Future Updates](#future-updates)
+- [EndoOmni](#endoomni)
+  - [Table of Contents](#table-of-contents)
+  - [Results](#results)
+    - [Zero-shot RDE on Hamlyn Dataset](#zero-shot-rde-on-hamlyn-dataset)
+    - [Zero-shot RDE on SERV-CT](#zero-shot-rde-on-serv-ct)
+  - [Dataset Download](#dataset-download)
+  - [Environment Setup](#environment-setup)
+  - [Pretrained Weights](#pretrained-weights)
+  - [Running Evaluation](#running-evaluation)
+  - [Citing the Paper](#citing-the-paper)
+  - [Acknowledgement](#acknowledgement)
+  - [Future Updates](#future-updates)
+  - [Metric Fine-Tuning For This Workspace](#metric-fine-tuning-for-this-workspace)
 
 ## Results
 
@@ -133,4 +138,63 @@ This code is based on [Depth Anything](https://github.com/LiheYoung/Depth-Anythi
 ## Future Updates
 The training code will be released after the paper is accepted. If you have any questions or suggestions, please feel free to contact us at tianqingyao2021@ia.ac.cn. We would be happy to help! 😊
 
+## Metric Fine-Tuning For This Workspace
+
+This workspace adds a small metric-depth fine-tuning path without changing the original EndoOmni training code.
+
+Current local initialization weight:
+
+```text
+CODE/EndoOmni/models/weights/EndoOmni_b.pt
+```
+
+Synthetic airway data can be used directly:
+
+```text
+Data/visual-localization/data_collection/AirwayHollow/trainset
+Data/visual-localization/data_collection/AirwayHollow/testset
+```
+
+Expected frame-level format:
+
+```text
+images/frame_<id>.png
+depths/frame_<id>.npy
+poses.csv
+metadata.json
+```
+
+Future real registered-depth data should use the same shape and may add `masks/` and `weights/`.
+
+Run a synthetic metric-depth smoke test from the workspace root:
+
+```bat
+python CODE\EndoOmni\train_metric.py \
+  --train-data Data\visual-localization\data_collection\AirwayHollow\trainset \
+  --val-data Data\visual-localization\data_collection\AirwayHollow\testset \
+  --weights CODE\EndoOmni\models\weights\EndoOmni_b.pt \
+  --epochs 20 \
+  --batch-size 4
+```
+
+Default output:
+
+```text
+Data/visual-localization/depth/EndoOmniMetric/<run_id>/
+|- config.json
+|- train_history.json
+|- metrics.json
+|- endoomni_metric_latest.pt
+`- endoomni_metric_best.pt
+```
+
+Use the exported checkpoint as the VO depth adapter:
+
+```bat
+python CODE\visual_localization\intraoperative\train.py \
+  --data Data\visual-localization\data_collection\AirwayHollow\trainset \
+  --depth-adapter endoomni \
+  --depth-model-name Data\visual-localization\depth\EndoOmniMetric\<run_id>\endoomni_metric_best.pt \
+  --depth-value-kind metric
+```
 
