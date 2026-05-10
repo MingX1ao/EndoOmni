@@ -21,6 +21,7 @@ from metric_finetune.data import create_loader
 from metric_finetune.losses import depth_metrics, gradient_loss, metric_loss, ssi_loss
 from metric_finetune.model import load_model, parameter_groups, set_encoder_trainable
 from path_utils import relative_to_workspace
+from training_curves import save_loss_history
 
 
 def parse_args() -> argparse.Namespace:
@@ -70,18 +71,29 @@ def main() -> None:
 
     best = float("inf")
     history = []
+    loss_history: list[dict[str, float | int | None]] = []
     for epoch in range(1, args.epochs + 1):
         set_encoder_trainable(model, epoch > args.freeze_encoder_epochs)
         train_stats = run_epoch(model, train_loader, device, optimizer, args, f"Epoch {epoch:03d}/{args.epochs} train")
         val_stats = run_epoch(model, val_loader, device, None, args, f"Epoch {epoch:03d}/{args.epochs} val") if val_loader else None
         score = train_stats["loss"] if val_stats is None else val_stats["loss"]
         history.append({"epoch": epoch, "train": train_stats, "val": val_stats})
+        loss_history.append(
+            {
+                "epoch": epoch,
+                "train_loss": float(train_stats["loss"]),
+                "eval_loss": None if val_stats is None else float(val_stats["loss"]),
+                "train_abs_rel": float(train_stats["abs_rel"]),
+                "eval_abs_rel": None if val_stats is None else float(val_stats["abs_rel"]),
+            }
+        )
         save_checkpoint(output / "endoomni_metric_latest.pt", model, epoch, score, config)
         if score < best:
             best = score
             save_checkpoint(output / "endoomni_metric_best.pt", model, epoch, score, config)
         print(format_epoch(epoch, args.epochs, train_stats, val_stats))
 
+    save_loss_history(output, loss_history, title="EndoOmni Metric Loss")
     (output / "train_history.json").write_text(json.dumps(history, indent=2, ensure_ascii=False), encoding="utf-8")
     metrics = history[-1]["val"] or history[-1]["train"]
     (output / "metrics.json").write_text(json.dumps(metrics, indent=2, ensure_ascii=False), encoding="utf-8")

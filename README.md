@@ -169,10 +169,10 @@ Future real registered-depth data should use the same shape and may add `masks/`
 Run a synthetic metric-depth smoke test from the workspace root:
 
 ```bat
-python CODE\EndoOmni\train_metric.py \
-  --train-data Data\visual-localization\data_collection\AirwayHollow\trainset \
-  --val-data Data\visual-localization\data_collection\AirwayHollow\testset \
-  --weights CODE\EndoOmni\models\weights\EndoOmni_b.pt \
+python CODE/EndoOmni/train_metric.py \
+  --train-data Data/visual-localization/data_collection/AirwayHollow/trainset \
+  --val-data Data/visual-localization/data_collection/AirwayHollow/testset \
+  --weights CODE/EndoOmni/models/weights/EndoOmni_b.pt \
   --epochs 20 \
   --batch-size 4
 ```
@@ -183,6 +183,8 @@ Default output:
 Data/visual-localization/depth/EndoOmniMetric/<run_id>/
 |- config.json
 |- train_history.json
+|- loss_history.json
+|- loss_curve.png
 |- metrics.json
 |- endoomni_metric_latest.pt
 `- endoomni_metric_best.pt
@@ -191,10 +193,9 @@ Data/visual-localization/depth/EndoOmniMetric/<run_id>/
 Use the exported checkpoint as the VO depth adapter:
 
 ```bat
-python CODE\visual_localization\intraoperative\train.py \
-  --data Data\visual-localization\data_collection\AirwayHollow\trainset \
+python CODE/visual_localization/intraoperative/train.py \
+  --data Data/visual-localization/data_collection/AirwayHollow/trainset \
   --depth-adapter endoomni \
-  --depth-model-name Data\visual-localization\depth\EndoOmniMetric\<run_id>\endoomni_metric_best.pt \
+  --depth-model-name Data/visual-localization/depth/EndoOmniMetric/<run_id>/endoomni_metric_best.pt \
   --depth-value-kind metric
 ```
-
