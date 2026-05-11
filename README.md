@@ -182,7 +182,7 @@ python CODE/EndoOmni/train_metric.py \
 Default output:
 
 ```text
-Data/visual-localization/depth/EndoOmniMetric/<run_id>/
+Data/depth_estimater/EndoOmniMetric/<run_id>/
 |- config.json
 |- train_history.json
 |- loss_history.json
@@ -192,13 +192,34 @@ Data/visual-localization/depth/EndoOmniMetric/<run_id>/
 `- endoomni_metric_best.pt
 ```
 
+Validate a fine-tuned checkpoint and save quantitative metrics plus RGB / ground-truth depth / inferred-depth triplets:
+
+```bat
+python CODE/EndoOmni/validate_metric.py \
+  --data Data/visual-localization/data_collection/AirwayHollow/testset \
+  --checkpoint Data/depth_estimater/EndoOmniMetric/<run_id>/endoomni_metric_best.pt \
+  --num-visuals 16
+```
+
+Default validation output:
+
+```text
+Data/depth_estimater/EndoOmniMetric/<run_id>/validation/<data_dir_name>/
+|- metrics.json
+|- validation.json
+`- visuals/
+   `- sample_<id>.png
+```
+
+For `Data/visual-localization/data_collection/AirwayHollow/testset`, the default validation directory is `validation/testset`; the mesh name is already part of the training run id.
+
 Use the exported checkpoint as the VO depth adapter:
 
 ```bat
 python CODE/visual_localization/intraoperative/train.py \
   --data Data/visual-localization/data_collection/AirwayHollow/trainset \
   --depth-adapter endoomni \
-  --depth-model-name Data/visual-localization/depth/EndoOmniMetric/<run_id>/endoomni_metric_best.pt \
+  --depth-model-name Data/depth_estimater/EndoOmniMetric/<run_id>/endoomni_metric_best.pt \
   --depth-value-kind metric
 ```
 

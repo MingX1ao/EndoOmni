@@ -147,7 +147,7 @@ def save_checkpoint(path: Path, model, epoch: int, loss: float, config: dict[str
 
 def default_output_dir(train_data: Path) -> Path:
     name = train_data.parent.name if train_data.name in {"trainset", "testset"} else train_data.name
-    return WORKSPACE_ROOT / "Data" / "visual-localization" / "depth" / "EndoOmniMetric" / f"{name}_{strftime('%Y%m%d_%H%M%S')}"
+    return WORKSPACE_ROOT / "Data" / "depth_estimater" / "EndoOmniMetric" / f"{name}_{strftime('%Y%m%d_%H%M%S')}"
 
 
 def format_epoch(epoch: int, epochs: int, train: dict[str, float], val: dict[str, float] | None) -> str:

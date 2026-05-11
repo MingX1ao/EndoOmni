@@ -100,11 +100,15 @@ Split real data by case/procedure, not by adjacent frames.
 Save fine-tuning artifacts under:
 
 ```text
-Data/visual-localization/depth/EndoOmniMetric/<run_id>/
+Data/depth_estimater/EndoOmniMetric/<run_id>/
 |- config.json
 |- train_history.json
 |- metrics.json
-|- qualitative/
+|- validation/
+|  `- <data_dir_name>/
+|     |- metrics.json
+|     |- validation.json
+|     `- visuals/
 |- endoomni_metric_latest.pt
 `- endoomni_metric_best.pt
 ```
