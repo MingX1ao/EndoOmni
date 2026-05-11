@@ -31,7 +31,7 @@ Use one shared supervised-depth dataset interface for both current synthetic dat
 Current synthetic data:
 
 ```text
-Data/visual-localization/data_collection/AirwayHollow/<split>/
+database/AirwayHollow/collections/<dataset_id>/<split>/
 |- images/frame_<id>.png
 |- depths/frame_<id>.npy
 |- poses.csv
@@ -43,7 +43,7 @@ The synthetic depth maps are float32 ray-hit distances in `mm`; `0` means no hit
 Future real data should follow the same basic shape:
 
 ```text
-Data/visual-localization/registered_depth/<case>/<split>/
+database/<mesh_id>/collections/<dataset_id>/<split>/
 |- images/
 |- depths/
 |- masks/        optional
@@ -100,7 +100,7 @@ Split real data by case/procedure, not by adjacent frames.
 Save fine-tuning artifacts under:
 
 ```text
-Data/depth_estimater/EndoOmniMetric/<run_id>/
+database/<mesh_id>/depth_estimater/<depth_run_id>/
 |- config.json
 |- train_history.json
 |- metrics.json

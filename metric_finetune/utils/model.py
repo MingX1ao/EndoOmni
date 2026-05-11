@@ -10,7 +10,9 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 
-ENDOOMNI_ROOT = Path(__file__).resolve().parents[1]
+ENDOOMNI_ROOT = Path(__file__).resolve().parents[2]
+CODE_ROOT = ENDOOMNI_ROOT.parent
+WORKSPACE_ROOT = CODE_ROOT.parent
 if str(ENDOOMNI_ROOT) not in sys.path:
     sys.path.insert(0, str(ENDOOMNI_ROOT))
 
@@ -38,6 +40,7 @@ def load_model(
     encoder: str | None = None,
     device: str | torch.device = "cpu",
 ) -> EndoOmniMetricModel:
+    checkpoint = resolve_checkpoint_path(checkpoint)
     payload = torch.load(checkpoint, map_location="cpu") if checkpoint is not None else None
     if encoder is None:
         encoder = checkpoint_encoder(payload) or "vitb"
@@ -49,6 +52,44 @@ def load_model(
         else:
             model.base.load_state_dict(state, strict=False)
     return model.to(device)
+
+
+def resolve_checkpoint_path(checkpoint: str | Path | None) -> Path | None:
+    if checkpoint is None:
+        return None
+    path = Path(checkpoint).expanduser()
+    candidates = [path]
+    if not path.is_absolute():
+        candidates.extend(
+            [
+                Path.cwd() / path,
+                WORKSPACE_ROOT / path,
+                CODE_ROOT / path,
+                ENDOOMNI_ROOT / path,
+            ]
+        )
+        parts = path.parts
+        if parts and parts[0] == "EndoOmni":
+            candidates.append(CODE_ROOT / path)
+            candidates.append(WORKSPACE_ROOT / "CODE" / path)
+        elif parts and parts[0] == "models":
+            candidates.append(ENDOOMNI_ROOT / path)
+    for candidate in candidates:
+        if candidate.exists():
+            return candidate
+    searched = "\n  - ".join(str(candidate) for candidate in unique_paths(candidates))
+    raise FileNotFoundError(f"Checkpoint not found: {checkpoint}\nSearched:\n  - {searched}")
+
+
+def unique_paths(paths: list[Path]) -> list[Path]:
+    seen: set[str] = set()
+    unique: list[Path] = []
+    for path in paths:
+        key = str(path)
+        if key not in seen:
+            seen.add(key)
+            unique.append(path)
+    return unique
 
 
 def checkpoint_encoder(payload: object) -> str | None:

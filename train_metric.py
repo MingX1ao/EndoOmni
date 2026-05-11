@@ -18,7 +18,7 @@ for import_root in (ENDOOMNI_ROOT, CODE_ROOT):
 from metric_finetune.utils.config import metric_run_config, serialize_paths
 from metric_finetune.utils.data import create_loader
 from metric_finetune.utils.losses import depth_metrics, gradient_loss, metric_loss, ssi_loss
-from metric_finetune.utils.model import load_model, parameter_groups, set_encoder_trainable
+from metric_finetune.utils.model import load_model, parameter_groups, resolve_checkpoint_path, set_encoder_trainable
 from training_curves import save_loss_history
 
 
@@ -47,6 +47,7 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> None:
     args = parse_args()
+    args.weights = resolve_checkpoint_path(args.weights)
     torch.manual_seed(args.seed)
     device = torch.device(args.device)
     image_size = (args.height, args.width)

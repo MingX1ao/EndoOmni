@@ -30,9 +30,9 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--output", type=Path, default=None, help="Output directory. Defaults near the checkpoint.")
     parser.add_argument("--height", type=int, default=None, help="Validation image height. Defaults to checkpoint config.")
     parser.add_argument("--width", type=int, default=None, help="Validation image width. Defaults to checkpoint config.")
-    parser.add_argument("--batch-size", type=int, default=4)
-    parser.add_argument("--num-workers", type=int, default=0)
-    parser.add_argument("--num-visuals", type=int, default=16, help="Number of RGB/GT/inferred triplets to save.")
+    parser.add_argument("--batch-size", type=int, default=10)
+    parser.add_argument("--num-workers", type=int, default=8)
+    parser.add_argument("--num-visuals", type=int, default=120, help="Number of RGB/GT/inferred triplets to save.")
     parser.add_argument("--device", type=str, default="cuda" if torch.cuda.is_available() else "cpu")
     return parser.parse_args()
 
@@ -60,9 +60,9 @@ def validate_metric_depth(
     output_dir: str | Path | None = None,
     height: int | None = None,
     width: int | None = None,
-    batch_size: int = 4,
-    num_workers: int = 0,
-    num_visuals: int = 16,
+    batch_size: int = 10,
+    num_workers: int = 8,
+    num_visuals: int = 120,
     device_name: str = "cpu",
 ) -> dict[str, object]:
     checkpoint = torch.load(checkpoint_path, map_location="cpu")
