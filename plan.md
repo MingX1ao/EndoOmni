@@ -111,24 +111,7 @@ Data/visual-localization/depth/EndoOmniMetric/<run_id>/
 
 Paths stored in configs should stay relative to the workspace root, matching the rest of the project.
 
-## Evaluation
-
-Depth evaluation:
-
-1. AbsRel
-2. RMSE in mm
-3. RMSElog
-4. delta thresholds
-5. qualitative RGB / GT / prediction / error grids
-
-Downstream evaluation:
-
-1. Train VO using the fine-tuned EndoOmni metric adapter.
-2. Evaluate VO on `data_collection/<mesh>/testset`.
-3. Reuse the same adapter in visual-servo planned-route replay.
-
 ## Remaining Implementation Order
 
 1. Add real RGB + registered-depth cases when they are available.
 2. Train the mixed-domain metric model using synthetic data as the scale anchor.
-3. Run downstream VO evaluation and planned-route replay with the selected metric checkpoint.
