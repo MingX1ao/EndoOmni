@@ -142,6 +142,8 @@ The training code will be released after the paper is accepted. If you have any 
 
 This workspace adds a small metric-depth fine-tuning path without changing the original EndoOmni training code.
 
+The local metric path adds a frame-level RGB/depth dataset loader, a metric wrapper around the EndoOmni DINOv2-DPT model, masked log-depth, gradient, and scale/shift-invariant losses, and checkpoint export for `endoomni_metric_latest.pt` and `endoomni_metric_best.pt`. It accepts synthetic airway depth maps and registered-depth layouts with optional `masks/` and `weights/`.
+
 Current local initialization weight:
 
 ```text
@@ -199,3 +201,5 @@ python CODE/visual_localization/intraoperative/train.py \
   --depth-model-name Data/visual-localization/depth/EndoOmniMetric/<run_id>/endoomni_metric_best.pt \
   --depth-value-kind metric
 ```
+
+`visual_localization` exposes this checkpoint through `EndoOmniMetricAdapter`, which resizes RGB frames consistently with training and returns `DepthEstimate` tensors marked as metric millimeter depth for VO training, evaluation, inference replay, and visual-servo runtime use.

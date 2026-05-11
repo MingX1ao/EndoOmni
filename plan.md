@@ -85,51 +85,15 @@ For synthetic data, mask is `depth > 0`.
 
 For real registered data, mask is the registered valid-depth mask. Optional confidence weights can scale `L_metric`.
 
-## Training Stages
+## Remaining Training Stage
 
-### Stage 1: Synthetic Smoke Test
-
-Train on:
-
-```text
-Data/visual-localization/data_collection/AirwayHollow/trainset
-```
-
-Validate on:
-
-```text
-Data/visual-localization/data_collection/AirwayHollow/testset
-```
-
-This stage confirms that the model and training loop can learn the project depth convention.
-
-### Stage 2: Mixed Synthetic And Real Fine-Tuning
+### Mixed Synthetic And Real Fine-Tuning
 
 Once real RGB + registered depth is available, train with both data sources.
 
 Use synthetic data as a scale anchor and real data as the target visual domain. Start with a balanced sampler, then increase the real-data ratio when there is enough real coverage.
 
 Split real data by case/procedure, not by adjacent frames.
-
-### Stage 3: Adapter Export
-
-Export the selected checkpoint for the VO pipeline and expose it through an EndoOmni metric adapter.
-
-Adapter output contract:
-
-```text
-DepthEstimate(
-    depth=Tensor[1,H,W],
-    source="model",
-    value_kind="metric",
-    metadata={
-        "adapter": "EndoOmniMetricAdapter",
-        "unit": "mm"
-    }
-)
-```
-
-The adapter should load local weights, resize RGB consistently with training, and return metric depth at the VO input size.
 
 ## Outputs
 
@@ -163,12 +127,8 @@ Downstream evaluation:
 2. Evaluate VO on `data_collection/<mesh>/testset`.
 3. Reuse the same adapter in visual-servo planned-route replay.
 
-## Implementation Order
+## Remaining Implementation Order
 
-1. Add a frame-level EndoOmni fine-tuning dataset for synthetic and real registered depth.
-2. Add `train_metric.py` that loads `EndoOmni_b.pt` and writes `EndoOmniMetric` checkpoints.
-3. Run the synthetic smoke test.
-4. Add real registered-depth loading with optional mask/weight.
-5. Train the mixed-domain metric model.
-6. Add `EndoOmniMetricAdapter` to the localization depth-adapter factory.
-7. Train and evaluate VO with `--depth-value-kind metric`.
+1. Add real RGB + registered-depth cases when they are available.
+2. Train the mixed-domain metric model using synthetic data as the scale anchor.
+3. Run downstream VO evaluation and planned-route replay with the selected metric checkpoint.
