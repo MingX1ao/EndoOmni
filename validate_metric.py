@@ -12,14 +12,14 @@ from tqdm import tqdm
 
 ENDOOMNI_ROOT = Path(__file__).resolve().parent
 CODE_ROOT = ENDOOMNI_ROOT.parent
-WORKSPACE_ROOT = CODE_ROOT.parent
 for import_root in (ENDOOMNI_ROOT, CODE_ROOT):
     if str(import_root) not in sys.path:
         sys.path.insert(0, str(import_root))
 
-from metric_finetune.data import MetricDepthDataset
-from metric_finetune.losses import depth_metrics
-from metric_finetune.model import load_model
+from metric_finetune.utils.config import default_validation_output_dir
+from metric_finetune.utils.data import MetricDepthDataset
+from metric_finetune.utils.losses import depth_metrics
+from metric_finetune.utils.model import load_model
 from path_utils import relative_to_workspace
 
 
@@ -71,7 +71,7 @@ def validate_metric_depth(
         int(height if height is not None else config.get("height", 224)),
         int(width if width is not None else config.get("width", 224)),
     )
-    output = Path(output_dir) if output_dir is not None else default_output_dir(checkpoint_path, data_dir)
+    output = Path(output_dir) if output_dir is not None else default_validation_output_dir(checkpoint_path, data_dir)
     output.mkdir(parents=True, exist_ok=True)
     visual_dir = output / "visuals"
     visual_dir.mkdir(parents=True, exist_ok=True)
@@ -196,13 +196,6 @@ def depth_to_rgb(depth: torch.Tensor, mask: torch.Tensor) -> np.ndarray:
     rgb = np.stack([gray, gray, gray], axis=-1)
     rgb[~valid.numpy()] = np.array([30, 30, 30], dtype=np.uint8)
     return rgb
-
-
-def default_output_dir(checkpoint_path: str | Path, data_dir: str | Path) -> Path:
-    checkpoint = Path(checkpoint_path)
-    run_id = checkpoint.parent.name
-    data_name = Path(data_dir).name
-    return WORKSPACE_ROOT / "Data" / "depth_estimater" / "EndoOmniMetric" / run_id / "validation" / data_name
 
 
 def format_metrics(metrics: dict[str, object]) -> str:

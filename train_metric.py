@@ -4,7 +4,6 @@ import argparse
 import json
 from pathlib import Path
 import sys
-from time import strftime
 
 import torch
 from tqdm import tqdm
@@ -12,15 +11,14 @@ from tqdm import tqdm
 
 ENDOOMNI_ROOT = Path(__file__).resolve().parent
 CODE_ROOT = ENDOOMNI_ROOT.parent
-WORKSPACE_ROOT = CODE_ROOT.parent
 for import_root in (ENDOOMNI_ROOT, CODE_ROOT):
     if str(import_root) not in sys.path:
         sys.path.insert(0, str(import_root))
 
-from metric_finetune.data import create_loader
-from metric_finetune.losses import depth_metrics, gradient_loss, metric_loss, ssi_loss
-from metric_finetune.model import load_model, parameter_groups, set_encoder_trainable
-from path_utils import relative_to_workspace
+from metric_finetune.utils.config import metric_run_config, serialize_paths
+from metric_finetune.utils.data import create_loader
+from metric_finetune.utils.losses import depth_metrics, gradient_loss, metric_loss, ssi_loss
+from metric_finetune.utils.model import load_model, parameter_groups, set_encoder_trainable
 from training_curves import save_loss_history
 
 
@@ -52,12 +50,12 @@ def main() -> None:
     torch.manual_seed(args.seed)
     device = torch.device(args.device)
     image_size = (args.height, args.width)
-    output = args.output or default_output_dir(args.train_data)
+    keys, default_output = metric_run_config(args.train_data)
+    output = args.output or default_output
     output.mkdir(parents=True, exist_ok=True)
 
-    config = vars(args).copy()
-    for key in ("train_data", "val_data", "weights", "output"):
-        config[key] = relative_to_workspace(config[key])
+    config = serialize_paths(vars(args), ("train_data", "val_data", "weights", "output"))
+    config["data_keys"] = keys
     (output / "config.json").write_text(json.dumps(config, indent=2, ensure_ascii=False), encoding="utf-8")
 
     train_loader = create_loader(args.train_data, image_size, args.batch_size, True, args.num_workers)
@@ -143,11 +141,6 @@ def save_checkpoint(path: Path, model, epoch: int, loss: float, config: dict[str
         },
         path,
     )
-
-
-def default_output_dir(train_data: Path) -> Path:
-    name = train_data.parent.name if train_data.name in {"trainset", "testset"} else train_data.name
-    return WORKSPACE_ROOT / "Data" / "depth_estimater" / "EndoOmniMetric" / f"{name}_{strftime('%Y%m%d_%H%M%S')}"
 
 
 def format_epoch(epoch: int, epochs: int, train: dict[str, float], val: dict[str, float] | None) -> str:
