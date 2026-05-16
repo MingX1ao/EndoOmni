@@ -30,7 +30,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--output", type=Path, default=None)
     parser.add_argument("--encoder", choices=("vits", "vitb", "vitl"), default="vitb")
     parser.add_argument("--epochs", type=int, default=20)
-    parser.add_argument("--batch-size", type=int, default=4)
+    parser.add_argument("--batch-size", type=int, default=40)
     parser.add_argument("--height", type=int, default=224)
     parser.add_argument("--width", type=int, default=224)
     parser.add_argument("--num-workers", type=int, default=0)
