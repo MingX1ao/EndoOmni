@@ -1,121 +1,76 @@
-# EndoOmni Metric-Depth Fine-Tuning Plan
-
-## Goal
-
-Fine-tune EndoOmni into a metric-depth estimator for the bronchoscopy localization pipeline.
-
-The downloaded checkpoint:
-
-```text
-CODE/EndoOmni/models/weights/EndoOmni_b.pt
-```
-
-is a ViT-B EndoOmni checkpoint for endoscopic relative depth. The fine-tuned model should output metric depth, preferably in `mm`, so downstream code can use:
-
-```text
-RGB -> EndoOmni metric depth -> VOModel -> visual_servo runtime
-```
-
-without per-frame median scaling.
+# EndoOmni Metric-Depth Plan
 
 ## Boundary
 
-EndoOmni owns only monocular depth estimation and depth checkpoint export.
+EndoOmni owns monocular metric-depth estimation and checkpoint export. It does
+not own VO training, descriptor training, trigger policies, or runtime replay.
 
-`visual_localization` still owns synthetic trajectory collection and VO training. `visual_servo` still owns branch landmarks, relocalization, and state-machine logic.
-
-## Data
-
-Use one shared supervised-depth dataset interface for both current synthetic data and future real registered-depth data.
-
-Current synthetic data:
+The downstream contract is:
 
 ```text
-database/AirwayHollow/collections/<dataset_id>/<split>/
-|- images/frame_<id>.png
-|- depths/frame_<id>.npy
-|- poses.csv
-`- metadata.json
+RGB -> EndoOmni metric depth -> VO / descriptor / visual-servo runtime
 ```
 
-The synthetic depth maps are float32 ray-hit distances in `mm`; `0` means no hit.
+## Current Default Checkpoint
 
-Future real data should follow the same basic shape:
+Use the `DeletedModel` metric-depth checkpoint as the current default:
 
 ```text
-database/<mesh_id>/collections/<dataset_id>/<split>/
-|- images/
-|- depths/
-|- masks/        optional
-|- poses.csv
-`- metadata.json
+database/DeletedModel/depth_estimater/run_20260526_193032/endoomni_metric_best.pt
 ```
 
-For real registered depth, use `mask` when available. If registration confidence is available, load it as an optional pixel weight.
-
-## Model
-
-Start from `EndoOmni_b.pt`.
-
-Use the existing DINOv2-DPT EndoOmni model as the backbone. Adapt the output so the model predicts positive metric depth instead of relative/disparity-style depth.
-
-Initial fine-tuning schedule:
-
-1. Train the metric head / decoder first.
-2. Unfreeze the last DINOv2 blocks.
-3. Unfreeze more encoder layers only if validation improves.
-
-Use a smaller learning rate for the encoder than for the metric head.
-
-## Loss
-
-Keep the loss simple:
+Training source:
 
 ```text
-L = L_metric + lambda_grad * L_gradient + lambda_ssi * L_ssi
+database/DeletedModel/collections/vo_synth_224x224_mm/trainset
+database/DeletedModel/collections/vo_synth_224x224_mm/testset
+CODE/EndoOmni/models/weights/EndoOmni_b.pt
 ```
 
-Recommended starting point:
+Validation metrics:
 
-1. `L_metric`: masked SILog or log-L1 on metric depth.
-2. `L_gradient`: masked depth-gradient loss for local geometry.
-3. `L_ssi`: small auxiliary scale/shift-invariant loss to preserve EndoOmni relative-depth structure.
+```text
+AbsRel: 0.0140
+RMSE: 1.045 mm
+RMSElog: 0.0282
+delta1: 0.9972
+```
 
-For synthetic data, mask is `depth > 0`.
+## Data Contract
 
-For real registered data, mask is the registered valid-depth mask. Optional confidence weights can scale `L_metric`.
+Synthetic and future registered-real depth data should use the same frame-level
+shape:
 
-## Remaining Training Stage
+```text
+images/frame_<id>.png
+depths/frame_<id>.npy
+poses.csv
+metadata.json
+masks/      optional
+weights/    optional
+```
 
-### Mixed Synthetic And Real Fine-Tuning
+Depth values are metric millimeters. Invalid synthetic depth is `0`; real
+registered data should provide masks when available.
 
-Once real RGB + registered depth is available, train with both data sources.
+## Output Contract
 
-Use synthetic data as a scale anchor and real data as the target visual domain. Start with a balanced sampler, then increase the real-data ratio when there is enough real coverage.
-
-Split real data by case/procedure, not by adjacent frames.
-
-## Outputs
-
-Save fine-tuning artifacts under:
+Metric-depth runs are saved under:
 
 ```text
 database/<mesh_id>/depth_estimater/<depth_run_id>/
 |- config.json
 |- train_history.json
+|- loss_history.json
 |- metrics.json
-|- validation/
-|  `- <data_dir_name>/
-|     |- metrics.json
-|     |- validation.json
-|     `- visuals/
 |- endoomni_metric_latest.pt
 `- endoomni_metric_best.pt
 ```
 
-Paths stored in configs should stay relative to the workspace root, matching the rest of the project.
+Paths stored in configs should remain workspace-relative.
 
-## Remaining Implementation Order
+## Next Work
 
-1. Add real RGB + registered-depth cases when they are available.
-2. Train the mixed-domain metric model using synthetic data as the scale anchor.
+1. Keep `run_20260526_193032` as the synthetic-trained default for `DeletedModel`.
+2. When registered real depth becomes available, train a mixed synthetic-real model using synthetic data as the scale anchor.
+3. Re-run VO, descriptor, and runtime replay selection after replacing the depth checkpoint.
