@@ -2,8 +2,7 @@
 
 ## Boundary
 
-EndoOmni owns monocular metric-depth estimation and checkpoint export. It does
-not own VO training, descriptor training, trigger policies, or runtime replay.
+EndoOmni owns monocular metric-depth estimation and checkpoint export. It does not own VO training, descriptor training, trigger policies, or runtime replay.
 
 The downstream contract is:
 
@@ -36,10 +35,17 @@ RMSElog: 0.0282
 delta1: 0.9972
 ```
 
+## Implemented Status
+
+- Metric fine-tuning is implemented through `CODE/EndoOmni/train_metric.py`.
+- Checkpoint validation is implemented through `CODE/EndoOmni/validate_metric.py`.
+- The local metric path supports synthetic RGB/depth layouts and future registered-real layouts with optional masks and weights.
+- `EndoOmniMetricAdapter` is used downstream by VO training, VO inference/evaluation, descriptor training, descriptor landmark encoding, and visual-servo runtime replay.
+- The selected synthetic-trained depth checkpoint is already used by the current `DeletedModel` VO, descriptor, trigger, and replay evaluations.
+
 ## Data Contract
 
-Synthetic and future registered-real depth data should use the same frame-level
-shape:
+Synthetic and future registered-real depth data should use the same frame-level shape:
 
 ```text
 images/frame_<id>.png
@@ -50,8 +56,7 @@ masks/      optional
 weights/    optional
 ```
 
-Depth values are metric millimeters. Invalid synthetic depth is `0`; real
-registered data should provide masks when available.
+Depth values are metric millimeters. Invalid synthetic depth is `0`; real registered data should provide masks when available.
 
 ## Output Contract
 
@@ -72,5 +77,6 @@ Paths stored in configs should remain workspace-relative.
 ## Next Work
 
 1. Keep `run_20260526_193032` as the synthetic-trained default for `DeletedModel`.
-2. When registered real depth becomes available, train a mixed synthetic-real model using synthetic data as the scale anchor.
-3. Re-run VO, descriptor, and runtime replay selection after replacing the depth checkpoint.
+2. When registered real depth or reliable depth proxies become available, validate the current checkpoint before retraining.
+3. If domain adaptation is needed, train a mixed synthetic-real model using synthetic data as the scale anchor.
+4. Re-run VO, descriptor, trigger, and runtime replay selection after replacing the depth checkpoint.
